@@ -1,0 +1,541 @@
+# 👨‍💻 Panduan Pengembang DEVELOPER GUIDE PROJECT RPL
+
+Panduan untuk developer yang ingin mengembangkan PROJECT RPL lebih lanjut.
+
+## 📋 Daftar Isi
+
+1. [Project Architecture](#-project-architecture)
+2. [Code Structure](#-code-structure)
+3. [Adding New Games](#-adding-new-games)
+4. [Testing Guidelines](#-testing-guidelines)
+5. [Code Style](#-code-style)
+6. [Deployment](#-deployment)
+
+---
+
+## 🏗️ Project Architecture
+
+```
+PROJECT_RPL/
+├── src/                 # Production code
+│   ├── __init__.py
+│   └── games/          # Game modules
+│       ├── __init__.py
+│       ├── dice_game.py
+│       ├── guessing_game.py
+│       ├── rock_paper_scissors.py
+│       └── qr_generator.py
+├── tests/              # Test code
+│   ├── __init__.py
+│   ├── test_dice_game.py
+│   ├── test_guessing_game.py
+│   ├── test_rock_paper_scissors.py
+│   └── test_qr_generator.py
+├── docs/               # Documentation
+├── requirements.txt    # Dependencies
+├── setup.cfg          # Project config
+└── .gitignore         # Git ignore rules
+```
+
+### Design Principles
+
+1. **Modularity** - Setiap game adalah modul terpisah
+2. **Reusability** - Functions dapat diimport dan digunakan
+3. **Testability** - Setiap fungsi dapat ditest
+4. **Scalability** - Mudah untuk menambah game baru
+5. **Documentation** - Setiap function punya docstring
+
+---
+
+## 📁 Code Structure
+
+### Struktur File Game
+
+Setiap game harus mengikuti template ini:
+
+```python
+"""
+Module description: Apa yang dilakukan game ini
+"""
+import random  # atau library lain yang diperlukan
+
+
+def helper_function():
+    """Helper function description."""
+    pass
+
+
+def main_game_function():
+    """
+    Main function untuk game.
+    Ini yang dijalankan ketika file diexecute.
+    """
+    while True:
+        # Game logic di sini
+        choice = input("Prompt: ")
+        # Process input
+        # ...
+        # Ask to play again
+        again = input("Play again? (y/n): ").lower()
+        if again != 'y':
+            print("Thank you!")
+            break
+
+
+if __name__ == "__main__":
+    main_game_function()
+```
+
+### Import Structure
+
+```python
+# src/__init__.py
+"""Package initialization dengan public exports."""
+
+__version__ = "1.0.0"
+
+from .games.dice_game import play_dice_game
+from .games.guessing_game import play_guessing_game
+
+__all__ = [
+    'play_dice_game',
+    'play_guessing_game',
+]
+```
+
+---
+
+## ➕ Adding New Games
+
+### Step 1: Create Game File
+
+```bash
+# Create new game file
+# src/games/my_new_game.py
+```
+
+```python
+"""
+My New Game - Deskripsi singkat tentang game
+"""
+import random
+
+
+def play_my_new_game():
+    """
+    Main function untuk game baru.
+    
+    Returns:
+        None
+    """
+    while True:
+        # Game implementation
+        play_again = input("Play again? (y/n): ").lower()
+        if play_again != 'y':
+            print("Thanks for playing!")
+            break
+
+
+if __name__ == "__main__":
+    play_my_new_game()
+```
+
+### Step 2: Update Package Init
+
+```python
+# src/games/__init__.py
+"""Games package."""
+
+__all__ = [
+    'dice_game',
+    'guessing_game',
+    'rock_paper_scissors',
+    'qr_generator',
+    'my_new_game',  # Add this
+]
+```
+
+```python
+# src/__init__.py
+"""Package untuk games dan utilitas PROJECT RPL."""
+
+from .games.dice_game import play_dice_game
+from .games.guessing_game import play_guessing_game
+from .games.rock_paper_scissors import play_rock_paper_scissors
+from .games.qr_generator import generate_qr_code
+from .games.my_new_game import play_my_new_game  # Add this
+
+__all__ = [
+    'play_dice_game',
+    'play_guessing_game',
+    'play_rock_paper_scissors',
+    'generate_qr_code',
+    'play_my_new_game',  # Add this
+]
+```
+
+### Step 3: Create Test File
+
+```python
+# tests/test_my_new_game.py
+"""Unit tests untuk My New Game"""
+import unittest
+from unittest.mock import patch
+from src.games.my_new_game import play_my_new_game
+
+
+class TestMyNewGame(unittest.TestCase):
+    """Test cases untuk my new game."""
+
+    @patch('builtins.input', side_effect=['n'])
+    def test_quit_game(self, mock_input):
+        """Test quit game."""
+        try:
+            play_my_new_game()
+        except Exception as e:
+            self.fail(f"play_my_new_game() raised {e}")
+
+    # Add more test cases
+
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+### Step 4: Update Requirements (if needed)
+
+```bash
+# requirements.txt
+# Add any new library yang dibutuhkan
+qrcode==7.4.2
+Pillow==10.1.0
+new-library==1.0.0  # Jika ada dependency baru
+```
+
+### Step 5: Test Everything
+
+```bash
+# Install package
+pip install -e .
+
+# Run all tests
+pytest tests/ -v
+
+# Run specific test
+pytest tests/test_my_new_game.py -v
+
+# Run with coverage
+pytest tests/ --cov=src --cov-report=html
+```
+
+### Step 6: Update Documentation
+
+Update `README.md` dan `docs/USER_GUIDE.md` dengan informasi game baru.
+
+---
+
+## 🧪 Testing Guidelines
+
+### Writing Tests
+
+**Good Test Practices:**
+
+```python
+import unittest
+from unittest.mock import patch, MagicMock
+from src.games.my_game import play_my_game
+
+
+class TestMyGame(unittest.TestCase):
+    """Test cases dengan deskripsi jelas."""
+
+    def test_something_descriptive(self):
+        """Satu test hanya test satu hal."""
+        # Arrange
+        expected = "something"
+        
+        # Act
+        result = function_to_test()
+        
+        # Assert
+        self.assertEqual(result, expected)
+
+    @patch('builtins.input', side_effect=['input1', 'input2'])
+    def test_with_user_input(self, mock_input):
+        """Test dengan mocking user input."""
+        # Input akan automatic terprovide
+        function_to_test()
+        
+        # Verify mock was called
+        mock_input.assert_called()
+
+    @patch('random.randint', return_value=5)
+    def test_with_mocked_random(self, mock_randint):
+        """Test dengan mocking random untuk deterministic test."""
+        result = function_that_uses_random()
+        
+        # Verify random was called
+        mock_randint.assert_called()
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run dengan verbose output
+pytest -v
+
+# Run spesific test file
+pytest tests/test_dice_game.py
+
+# Run spesific test function
+pytest tests/test_dice_game.py::TestDiceGame::test_dice_roll
+
+# Run dengan coverage
+pytest --cov=src --cov-report=html
+
+# Run dengan output file
+pytest --cov=src --cov-report=term-missing > test_results.txt
+```
+
+### Coverage Targets
+
+- Aim for **80%+ code coverage**
+- Critical functions harus 100% coverage
+- Use `pytest-cov` untuk measure
+
+```bash
+# Generate HTML coverage report
+pytest --cov=src --cov-report=html
+
+# Open report
+open htmlcov/index.html  # macOS
+# Atau buka file di browser
+```
+
+---
+
+## 📝 Code Style
+
+### Naming Conventions
+
+```python
+# Constants - UPPER_SNAKE_CASE
+MAX_ATTEMPTS = 10
+QR_BOX_SIZE = 10
+
+# Functions & Variables - lower_snake_case
+def play_dice_game():
+    user_choice = input("Choose: ")
+    
+# Classes - PascalCase (jika ada)
+class GameManager:
+    pass
+```
+
+### Documentation
+
+```python
+def calculate_score(attempts, difficulty):
+    """
+    Calculate game score based on attempts and difficulty.
+    
+    Args:
+        attempts (int): Number of attempts made
+        difficulty (str): Game difficulty level ('easy', 'medium', 'hard')
+    
+    Returns:
+        int: Calculated score
+    
+    Raises:
+        ValueError: If difficulty is invalid
+    
+    Example:
+        >>> calculate_score(5, 'easy')
+        100
+    """
+    if difficulty not in ['easy', 'medium', 'hard']:
+        raise ValueError(f"Invalid difficulty: {difficulty}")
+    
+    score_map = {'easy': 10, 'medium': 20, 'hard': 30}
+    return score_map[difficulty] * (10 - min(attempts, 10))
+```
+
+### Code Formatting
+
+```python
+# Use meaningful variable names
+user_input = input()  # Good
+x = input()  # Bad
+
+# Keep functions small (< 50 lines preferred)
+def play_game():
+    """Good: Readable and focused."""
+    pass
+
+# Use meaningful comments
+# Good comment - explains WHY
+# We multiply by 2 because of network overhead
+result = base_value * 2
+
+# Bad comment - explains WHAT (code already does)
+# Multiply result by 2
+result = result * 2
+
+# Use type hints (Python 3.5+)
+def add_numbers(a: int, b: int) -> int:
+    """Add two numbers."""
+    return a + b
+```
+
+---
+
+## 🚀 Deployment
+
+### Prepare for Release
+
+```bash
+# 1. Update version
+# Update version in src/__init__.py
+
+# 2. Run all tests
+pytest tests/ -v
+
+# 3. Check code quality
+pylint src/
+
+# 4. Build package
+python -m pip install --upgrade build
+python -m build
+
+# 5. Create release
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+```
+
+### Distribution
+
+#### Option 1: PyPI (Python Package Index)
+
+```bash
+# Install twine
+pip install twine
+
+# Upload to PyPI
+twine upload dist/*
+
+# Users dapat install dengan
+pip install project-rpl
+```
+
+#### Option 2: GitHub Release
+
+```bash
+# Create release on GitHub
+# Tag version dan upload dist files
+
+# Users download dan install locally
+pip install project-rpl-1.0.0.tar.gz
+```
+
+#### Option 3: Docker
+
+```dockerfile
+# Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY . .
+
+RUN pip install -r requirements.txt
+
+CMD ["python", "-m", "src.games.dice_game"]
+```
+
+```bash
+# Build & run
+docker build -t project-rpl .
+docker run project-rpl
+```
+
+---
+
+## 📊 Performance Optimization
+
+### Profiling Code
+
+```python
+import cProfile
+import pstats
+
+# Profile game function
+profiler = cProfile.Profile()
+profiler.enable()
+
+play_my_game()
+
+profiler.disable()
+stats = pstats.Stats(profiler)
+stats.sort_stats('cumulative')
+stats.print_stats(10)  # Top 10 functions
+```
+
+### Memory Optimization
+
+```python
+# Bad: Loads semua data in memory
+all_numbers = list(range(1, 1000000))
+
+# Good: Use generator untuk memory efficient
+def number_generator():
+    for i in range(1, 1000000):
+        yield i
+```
+
+---
+
+## 🔄 Git Workflow
+
+### Commit Convention
+
+```bash
+# Format: type(scope): subject
+
+# Good commits
+git commit -m "feat(dice-game): add animated dice roll"
+git commit -m "fix(guessing-game): handle invalid input properly"
+git commit -m "docs(README): update installation instructions"
+git commit -m "refactor(qr-gen): extract QR code creation logic"
+git commit -m "test(rps): add edge case tests"
+
+# Types: feat, fix, docs, refactor, test, style, perf, chore
+```
+
+### Branch Strategy
+
+```bash
+# Feature branch
+git checkout -b feature/new-game-name
+
+# Bugfix branch
+git checkout -b bugfix/issue-description
+
+# Merge back to main
+git checkout main
+git merge feature/new-game-name
+```
+
+---
+
+## 📚 Additional Resources
+
+- **Python Documentation:** https://docs.python.org/3/
+- **Pytest Guide:** https://docs.pytest.org/
+- **PEP 8 Style Guide:** https://www.python.org/dev/peps/pep-0008/
+- **Real Python:** https://realpython.com/
+
+---
+
+**Happy Coding! Contribute to PROJECT RPL! 🚀**
